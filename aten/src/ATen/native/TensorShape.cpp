@@ -980,10 +980,12 @@ Tensor tile(const Tensor& self, IntArrayRef reps){
   return self.repeat(reps);
 }
 
+// Vec = ArrayRef<int64_t>, SmallVector<int64_t>
+template<typename Vec>
 Tensor alias_with_sizes_and_strides(
     const Tensor& self,
-    const c10::IntArrayRef sizes,
-    const c10::IntArrayRef strides) {
+    const Vec& sizes,
+    const Vec& strides) {
   Tensor self_;
   if (self.is_quantized()) {
     auto impl = c10::make_intrusive<QTensorImpl>(
@@ -1973,7 +1975,7 @@ Tensor unflatten(const Tensor& self, int64_t dim, IntArrayRef sizes, c10::option
     TORCH_CHECK(names, "unflatten: input is a named tensor but no names were given for unflattened sizes");
   }
 
-  std::vector<int64_t> inferred_size;
+  DimVector inferred_size;
   try {
     inferred_size = at::infer_size(sizes, self.size(dim));
   } catch (const std::runtime_error& e) {
@@ -2070,7 +2072,7 @@ Tensor numpy_T(const Tensor &self) {
 }
 
 Tensor view(const Tensor& self, IntArrayRef size) {
-  auto inferred_size = at::infer_size(size, self.numel());
+  at::DimVector inferred_size = at::infer_size_dv(size, self.numel());
   auto stride = at::detail::computeStride(self.sizes(),
                                           self.strides(),
                                           inferred_size);
